@@ -1,4 +1,12 @@
+# nginx proxy address - http://172.17.0.1:59078
+
 name: mattermost
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
 services:
   server:
     image: mattermost/mattermost-team-edition:latest
@@ -6,13 +14,15 @@ services:
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
+    logging: *default-logging
     environment:
-      - MM_ADMIN_USERNAME=${APP_USER_NAME:-admin}
-      - MM_ADMIN_PASSWORD=${APP_USER_PASS:-password}
-      - MM_ADMIN_EMAIL=admin@${BASE_DOMAIN_NAME}
+      - TZ=${TZ:-America/New_York}
+      - MM_ADMIN_USERNAME=${APP_USER_NAME:-administrator}
+      - MM_ADMIN_EMAIL=admin@${BASE_DOMAIN_NAME:-$BASE_HOST_NAME}
+      - MM_ADMIN_PASSWORD=${APP_USER_PASS:-A5zTb5zlD5H5HrTvvZN4MjXAA3IVkcxb}
       - MM_SQLSETTINGS_DRIVERNAME=mysql
       - MM_SERVICESETTINGS_SITEURL=https://${BASE_HOST_NAME:-$HOSTNAME}
-      - MM_SQLSETTINGS_DATASOURCE=mmuser:mmpassword@tcp(mattermost-db:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
+      - MM_SQLSETTINGS_DATASOURCE=dbadmin:spboQB7LIMkbJLUO1IwyluCL54hQ3cOE@tcp(mattermost-db:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
     ports:
       - '172.17.0.1:59078:8065'
     volumes:
@@ -32,13 +42,19 @@ services:
     hostname: mattermost-db
     restart: always
     pull_policy: always
+    logging: *default-logging
     environment:
-      - MYSQL_USER=mmuser
+      - TZ=${TZ:-America/New_York}
+      - MYSQL_USER=dbadmin
       - MYSQL_DATABASE=mattermost
-      - MYSQL_PASSWORD=mmpassword
-      - MYSQL_ROOT_PASSWORD=mmpassword
+      - MYSQL_PASSWORD=spboQB7LIMkbJLUO1IwyluCL54hQ3cOE
     volumes:
       - /var/lib/srv/${USER}/docker/mattermost/mattermost-team-edition/latest/rootfs/data/db/mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-u', 'root']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - mattermost
 
