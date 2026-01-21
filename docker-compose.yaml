@@ -1,0 +1,64 @@
+# nginx proxy address - http://172.17.0.1:59078
+
+name: mattermost
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: mattermost/mattermost-team-edition:latest
+    container_name: mattermost-app
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      MM_ADMIN_USERNAME: ${APP_USER_NAME:-administrator}
+      MM_ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-${BASE_HOST_NAME}}
+      MM_ADMIN_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
+      MM_SQLSETTINGS_DRIVERNAME: mysql
+      MM_SERVICESETTINGS_SITEURL: https://${BASE_HOST_NAME:-$HOSTNAME}
+      MM_SQLSETTINGS_DATASOURCE: ${DB_USER_NAME:-dbadmin}:${DB_USER_PASS:-changeme_db_password}@tcp(mattermost-db:3306)/${DB_CREATE_DATABASE_NAME:-mattermost}?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
+    ports:
+      - '172.17.0.1:59078:8065'
+    volumes:
+      - './rootfs/data/log/mattermost:/mattermost/logs'
+      - './rootfs/data/mattermost:/mattermost/data'
+      - './rootfs/data/mattermost/plugins:/mattermost/plugins'
+      - './rootfs/config/mattermost:/mattermost/config'
+      - './rootfs/config/mattermost/plugins:/mattermost/client/plugins'
+    depends_on:
+      - db
+    networks:
+      - mattermost
+
+  db:
+    image: mysql:latest
+    container_name: mattermost-db
+    hostname: mattermost-db
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      MYSQL_USER: ${DB_USER_NAME:-dbadmin}
+      MYSQL_DATABASE: ${DB_CREATE_DATABASE_NAME:-mattermost}
+      MYSQL_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
+    volumes:
+      - './rootfs/db/mysql/mattermost:/var/lib/mysql'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-u', 'root']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mattermost
+
+networks:
+  mattermost:
+    name: mattermost
+    external: false
