@@ -49,7 +49,7 @@ services:
       MYSQL_DATABASE: ${DB_CREATE_DATABASE_NAME:-mattermost}
       MYSQL_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
     volumes:
-      - './rootfs/db/mysql/mattermost:/var/lib/mysql'
+      - './rootfs/data/db/mysql/mattermost:/var/lib/mysql'
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-u', 'root']
       interval: 10s
