@@ -54,12 +54,12 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/log/mattermost` - Data storage
-- `./rootfs/data/mattermost` - Data storage
-- `./rootfs/data/mattermost/plugins` - Data storage
-- `./rootfs/config/mattermost` - Data storage
-- `./rootfs/config/mattermost/plugins` - Data storage
-- `./rootfs/data/db/mysql/mattermost` - Data storage
+- `./volumes/data/log/mattermost` - Data storage
+- `./volumes/data/mattermost` - Data storage
+- `./volumes/data/mattermost/plugins` - Data storage
+- `./volumes/config/mattermost` - Data storage
+- `./volumes/config/mattermost/plugins` - Data storage
+- `./volumes/data/db/mysql/mattermost` - Data storage
 
 ## 🔐 Security
 
