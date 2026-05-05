@@ -26,11 +26,11 @@ services:
     ports:
       - '172.17.0.1:59078:8065'
     volumes:
-      - './rootfs/data/log/mattermost:/mattermost/logs'
-      - './rootfs/data/mattermost:/mattermost/data'
-      - './rootfs/data/mattermost/plugins:/mattermost/plugins'
-      - './rootfs/config/mattermost:/mattermost/config'
-      - './rootfs/config/mattermost/plugins:/mattermost/client/plugins'
+      - './volumes/data/log/mattermost:/mattermost/logs'
+      - './volumes/data/mattermost:/mattermost/data'
+      - './volumes/data/mattermost/plugins:/mattermost/plugins'
+      - './volumes/config/mattermost:/mattermost/config'
+      - './volumes/config/mattermost/plugins:/mattermost/client/plugins'
     depends_on:
       - db
     networks:
@@ -49,7 +49,7 @@ services:
       MYSQL_DATABASE: ${DB_CREATE_DATABASE_NAME:-mattermost}
       MYSQL_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
     volumes:
-      - './rootfs/data/db/mysql/mattermost:/var/lib/mysql'
+      - './volumes/data/db/mysql/mattermost:/var/lib/mysql'
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-u', 'root']
       interval: 10s
