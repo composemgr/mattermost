@@ -38,7 +38,7 @@ services:
       - mattermost
 
   db:
-    image: postgres:alpine
+    image: postgres:latest
     container_name: mattermost-db
     hostname: mattermost-db
     restart: always
