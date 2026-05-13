@@ -20,9 +20,9 @@ services:
       MM_ADMIN_USERNAME: ${APP_USER_NAME:-administrator}
       MM_ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-${BASE_HOST_NAME}}
       MM_ADMIN_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
-      MM_SQLSETTINGS_DRIVERNAME: mysql
+      MM_SQLSETTINGS_DRIVERNAME: postgres
       MM_SERVICESETTINGS_SITEURL: https://${BASE_HOST_NAME:-$HOSTNAME}
-      MM_SQLSETTINGS_DATASOURCE: ${DB_USER_NAME:-dbadmin}:${DB_USER_PASS:-changeme_db_password}@tcp(mattermost-db:3306)/${DB_CREATE_DATABASE_NAME:-mattermost}?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
+      MM_SQLSETTINGS_DATASOURCE: postgres://${DB_USER_NAME:-dbadmin}:${DB_USER_PASS:-changeme_db_password}@mattermost-db:5432/${DB_CREATE_DATABASE_NAME:-mattermost}?sslmode=disable&connect_timeout=10
     ports:
       - '172.17.0.1:59078:8065'
     volumes:
@@ -32,12 +32,13 @@ services:
       - './volumes/config/mattermost:/mattermost/config'
       - './volumes/config/mattermost/plugins:/mattermost/client/plugins'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - mattermost
 
   db:
-    image: mysql:latest
+    image: postgres:alpine
     container_name: mattermost-db
     hostname: mattermost-db
     restart: always
@@ -45,13 +46,13 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
-      MYSQL_USER: ${DB_USER_NAME:-dbadmin}
-      MYSQL_DATABASE: ${DB_CREATE_DATABASE_NAME:-mattermost}
-      MYSQL_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
+      POSTGRES_USER: ${DB_USER_NAME:-dbadmin}
+      POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-mattermost}
+      POSTGRES_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
     volumes:
-      - './volumes/data/db/mysql/mattermost:/var/lib/mysql'
+      - './volumes/data/db/postgres/mattermost:/var/lib/postgresql/data'
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-u', 'root']
+      test: ['CMD', 'pg_isready', '-U', '${DB_USER_NAME:-dbadmin}', '-d', '${DB_CREATE_DATABASE_NAME:-mattermost}']
       interval: 10s
       timeout: 5s
       retries: 5
