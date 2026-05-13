@@ -17,6 +17,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: mattermost-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       MM_ADMIN_USERNAME: ${APP_USER_NAME:-administrator}
       MM_ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-${BASE_HOST_NAME}}
       MM_ADMIN_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
@@ -36,6 +38,24 @@ services:
         condition: service_healthy
     networks:
       - mattermost
+      - proxy
+      - cloudflare
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://mattermost-app:8065'
+      - 'cloudflare.hostname=mattermost.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.mattermost-app.entrypoints=http'
+      - 'traefik.http.routers.mattermost-app-secure.tls=true'
+      - 'traefik.http.routers.mattermost-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.mattermost-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.mattermost-app.middlewares=mattermost-app-https-redirect'
+      - 'traefik.http.routers.mattermost-app-secure.entrypoints=https'
+      - 'traefik.http.routers.mattermost-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.mattermost-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.mattermost-app-secure.service=mattermost-app'
+      - 'traefik.http.services.mattermost-app.loadbalancer.server.port=8065'
 
   db:
     image: postgres:latest
@@ -46,6 +66,7 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: mattermost-db
       POSTGRES_USER: ${DB_USER_NAME:-dbadmin}
       POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-mattermost}
       POSTGRES_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
@@ -63,3 +84,7 @@ networks:
   mattermost:
     name: mattermost
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
