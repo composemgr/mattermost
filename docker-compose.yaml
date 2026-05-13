@@ -19,9 +19,6 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: mattermost-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      MM_ADMIN_USERNAME: ${APP_USER_NAME:-administrator}
-      MM_ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-${BASE_HOST_NAME}}
-      MM_ADMIN_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
       MM_SQLSETTINGS_DRIVERNAME: postgres
       MM_SERVICESETTINGS_SITEURL: https://${BASE_HOST_NAME:-$HOSTNAME}
       MM_SQLSETTINGS_DATASOURCE: postgres://${DB_USER_NAME:-dbadmin}:${DB_USER_PASS:-changeme_db_password}@mattermost-db:5432/${DB_CREATE_DATABASE_NAME:-mattermost}?sslmode=disable&connect_timeout=10
