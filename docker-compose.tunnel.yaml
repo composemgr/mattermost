@@ -1,0 +1,71 @@
+# nginx proxy address - http://172.17.0.1:64249
+name: mattermost
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: mattermost/mattermost-team-edition:latest
+    container_name: mattermost-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: mattermost-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SERVICESETTINGS_SITEURL: https://${BASE_HOST_NAME:-$HOSTNAME}
+      MM_SQLSETTINGS_DATASOURCE: postgres://${DB_USER_NAME:-mattermost}:${DB_USER_PASS:-replace-with-a-random-password}@mattermost-db:5432/${DB_CREATE_DATABASE_NAME:-mattermost}?sslmode=disable&connect_timeout=10
+    volumes:
+      - './volumes/data/log/mattermost:/mattermost/logs'
+      - './volumes/data/mattermost:/mattermost/data'
+      - './volumes/data/mattermost/plugins:/mattermost/plugins'
+      - './volumes/config/mattermost:/mattermost/config'
+      - './volumes/config/mattermost/plugins:/mattermost/client/plugins'
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://mattermost-app:8065'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - mattermost
+      - cloudflare
+
+  db:
+    image: postgres:latest
+    container_name: mattermost-db
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: mattermost-db
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: mattermost-db
+      POSTGRES_USER: ${DB_USER_NAME:-mattermost}
+      POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-mattermost}
+      POSTGRES_PASSWORD: ${DB_USER_PASS:-replace-with-a-random-password}
+    volumes:
+      - './volumes/db/postgres/mattermost:/var/lib/postgresql/data:z'
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', '${DB_USER_NAME:-mattermost}', '-d', '${DB_CREATE_DATABASE_NAME:-mattermost}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mattermost
+
+networks:
+  mattermost:
+    name: mattermost
+    external: false
+  cloudflare:
+    external: true
